@@ -1,5 +1,6 @@
 # rna-seq-blood-mice-toxoplasma-2025
-## Owner 
+## Author 
+Vittoria Mungai 
 
 ## Description 
 Bulk RNA-sequencing and differential expression analysis of blood samples from mice. The mice are divided in two groups: one is infected with toxoplasma and the other is uninfected control groups. 
