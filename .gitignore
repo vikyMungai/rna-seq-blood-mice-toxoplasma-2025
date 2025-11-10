@@ -1,2 +1,6 @@
 # exclude the logs 
 /logs
+# exclude the data files  
+/data
+# exclude the output of the results 
+/results
