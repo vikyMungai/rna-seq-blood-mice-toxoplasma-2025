@@ -25,7 +25,7 @@
 #           RELATIVE_PATH_OUTPUT_FILE (str): the relative path (from the project) of the outputfile. 
 #                                       As it is a relative do not put '/' at the beginning
 #    Returns: 
-#       Generate the file sampleslist.tsv
+#       Generate the output file describe at the RELATIVE_PATH_OUTPUT_FILE
         
 
 # save the path of the directory into the variable FASTQ_FOLDER

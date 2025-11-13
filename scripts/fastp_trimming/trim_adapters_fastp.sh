@@ -3,7 +3,7 @@
 # the number of arrays matches the number of fragments 
 #SBATCH --array=1-15
 #SBATCH --time=02:00:00
-#SBATCH --mem=1G
+#SBATCH --mem=2G
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=trim_adapters_fastp
 #SBATCH --partition=pibu_el8

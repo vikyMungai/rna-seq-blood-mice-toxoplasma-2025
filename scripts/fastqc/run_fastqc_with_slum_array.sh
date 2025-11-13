@@ -12,15 +12,27 @@
 #SBATCH --output=/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/logs/outputs/fastqc/output_fastqc_%A_%a.out
 #SBATCH --error=/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/logs/errors/fastqc/error_fastqc_%A_%a.err
 
+#   Parameters: 
+#           RELATIVE_PATH_OUTPUT_FILE (str): the relative path (from the project) of the outputfile. 
+#                                       As it is a relative do not put '/' at the beginning            
+
+# For the fastqc with raw blood samples
+# sbatch run_fastqc_with_slum_array.sh results/fastqc/intermediate_results/sampleslist.tsv results/fastqc/
+
+# For the fastqc with trimmed samples
+# sbatch run_fastqc_with_slum_array.sh results/fastqc_after_trimming/intermediate_results/sampleslist.tsv results/fastqc_after_trimming/
+
+
 # path of the container fastqc
 CONTAINER="/containers/apptainer/fastqc-0.12.1.sif"
 
 # directory of the project (this is an absolute path, so depending on which machine it is run it should be changed) 
 WORKDIR="/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025"
-# my result directory 
-OUTDIR="$WORKDIR/results/fastqc/"
 # file with the list of the fragments. See script `generate_sampleslist.sh` for further details
-SAMPLELIST="$WORKDIR/results/fastqc/intermediate_results/sampleslist.tsv"
+SAMPLELIST="$WORKDIR/$1"
+# my result directory 
+OUTDIR="$WORKDIR/$2"
+
 
 
 # SLURM_ARRAY_TASK_ID we use the ID of the array to access the right line in the file 
