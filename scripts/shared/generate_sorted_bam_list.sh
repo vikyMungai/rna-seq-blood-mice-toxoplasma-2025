@@ -2,8 +2,8 @@
 # It creates a file with a list of all the sorted file in the specified directory 
 # in each line you have [SORTED_BAM_PATH] 
 
-# To use the sam file generated with the script 
-# ./generate_sam_bam_lists.sh results/hista2/index_sorted_bam_files/intermediate_results/sorted_bam_list.tsv 
+# To use the bam file generated with the script "/hisat2/map_reads_convert_sort_bam.sh"
+# ./generate_sorted_bam_list.sh results/hisat2/index_sorted_bam_files/intermediate_results/sorted_bam_list.tsv 
 
 #   Parameters: 
 #           
@@ -16,8 +16,7 @@
 # working directory of the project 
 WORKDIR="/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025"
 # directory of sorted BAM files
-DIR_BAM_FILE="$WORKDIR/results/hista2/sort_bam_files"
-
+DIR_BAM_FILE="$WORKDIR/results/hisat2/map_reads_convert_sort_bam"
 
 # output file's path 
 OUTPUT_FILE="$WORKDIR/$1"

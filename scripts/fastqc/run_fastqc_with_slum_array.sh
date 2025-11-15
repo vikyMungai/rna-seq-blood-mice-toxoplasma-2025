@@ -13,6 +13,8 @@
 #SBATCH --error=/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/logs/errors/fastqc/error_fastqc_%A_%a.err
 
 #   Parameters: 
+#           SAMPLELIST (str): the file .tsv with the list of all the fastq files  
+#                                       As it is a relative do not put '/' at the beginning 
 #           RELATIVE_PATH_OUTPUT_FILE (str): the relative path (from the project) of the outputfile. 
 #                                       As it is a relative do not put '/' at the beginning            
 
