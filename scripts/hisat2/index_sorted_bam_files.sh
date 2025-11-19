@@ -26,7 +26,6 @@ SORTED_BAM_FILES_LIST="$WORKDIR/results/hisat2/index_sorted_bam_files/intermedia
 OUTPUT_DIR="$WORKDIR/results/hisat2/index_sorted_bam_files"
 
 
-
 # read the path of the .bam file from the 1st column SORTED_BAM_FILES_LIST
 SORTED_BAM_FILE=`awk -v line=$SLURM_ARRAY_TASK_ID 'NR==line{print $1; exit}' $SORTED_BAM_FILES_LIST`
 
@@ -34,7 +33,13 @@ SORTED_BAM_FILE=`awk -v line=$SLURM_ARRAY_TASK_ID 'NR==line{print $1; exit}' $SO
 BASE_NAME=`basename $SORTED_BAM_FILE`
 INDEXED_S_BAM_FILE="$OUTPUT_DIR/${BASE_NAME%*.bam}.index"
 
+# only if the directory does not exist it will be created 
+if [ ! -d $OUTPUT_DIR ]; then 
+    # option -p create the parents' folders if they do not exist
+    mkdir -p $OUTPUT_DIR
+fi 
+
 # for debugging 
-echo "DB: SORTED_BAM_FILE: $SORTED_BAM_FILE, INDEXED_S_BAM_FILE: $INDEXED_S_BAM_FILE, BASE_NAME: $BASE_NAME"
+# echo "DB: SORTED_BAM_FILE: $SORTED_BAM_FILE, INDEXED_S_BAM_FILE: $INDEXED_S_BAM_FILE, BASE_NAME: $BASE_NAME"
 
 apptainer exec --bind /data/ $CONTAINER_HISAT_SAMTOOLS samtools index "$SORTED_BAM_FILE" -o "$INDEXED_S_BAM_FILE"

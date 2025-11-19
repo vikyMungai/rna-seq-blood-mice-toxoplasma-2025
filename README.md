@@ -6,25 +6,29 @@ Vittoria Mungai
 Bulk RNA-sequencing and differential expression analysis of blood samples from mice. The mice are divided in two groups: one is infected with toxoplasma and the other is uninfected control groups. 
 
 ## Sample data 
-The fastq files from the blood samples used are stored in the directory: `/data/courses/rnaseq_course/toxoplasma_de/reads_Blood`. 
+The fastq files from the blood samples used are stored in the directory: `/data/courses/rnaseq_course/toxoplasma_de/reads_Blood/`. It's possible to access the folder directly when needed of create a logical link with the command `ln -s [name_link] [name_original_file]`
 
 
 
 ### Structure of the workflow 
 Starting from the fastq files of the samples the workflow is divided in 6 main steps: 
-1. Quality checks
-2. Map reads to the reference genome
-3. Count the number of reads per gene
-4. Exploratory data analysis
-5. Differential expression analysis
-6. Overrepresentation analysis
+1. 
+2. Quality checks
+3. Map reads to the reference genome
+4. Count the number of reads per gene
+5. Exploratory data analysis
+6. Differential expression analysis
+7. Overrepresentation analysis
 
 :note: 
 - In scripts where parameters are requested there is the command with all the arguments for each execution
-- If a scripts access a file which needs to be generated, a explicit comment will tell you. 
+- If a scripts access a file which needs to be generated, a explicit comment in the script will tell you. 
+- The output of the script are all in the folder results. ALthough, further details are given below. 
+
+#### 1. Accessing the raw data from the cluster 
+The fastq files for the Blood sample are stored in the directory `/data/courses/rnaseq_course/toxoplasma_de
 
 #### 2. Quality checks 
-
 
 For the quality check the listed scripts (in the `/scripts` directory) were run in the following order:
 1. in the folder `/shared`:
@@ -50,6 +54,11 @@ For the quality check the listed scripts (in the `/scripts` directory) were run 
     - `generate_sorted_bam_list.sh` to generate le list of the sorted bam files that will be used to use the slurm array in the script: `index_sorted_bam_files.sh`
     - `index_sorted_bam_files.sh` it uses the file "sorted_bam_list.tsv" to index the bam files 
 
+#### 4. Count the number of reads per gene
+1. With `featureCounts` a table of counts is generated containing the number of reads per gene in each sample. 
+    in folder `feature_counts`: 
+    - `feature_counts.sh` will generate the table of counts and the counting summary. 
+    - `multiqc_feature_counts.sh` will generate a .html report of featureCounts. 
 
 
 

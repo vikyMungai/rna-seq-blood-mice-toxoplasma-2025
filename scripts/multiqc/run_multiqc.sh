@@ -21,9 +21,6 @@
 # sbatch run_multiqc.sh results/fastqc_after_trimming results/multiqc_after_trimming
 
 
-       
-
-
 # path of the container multiqc
 CONTAINER="/containers/apptainer/multiqc-1.19.sif"
 

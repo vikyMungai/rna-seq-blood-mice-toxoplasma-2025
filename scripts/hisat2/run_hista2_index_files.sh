@@ -23,5 +23,12 @@ DIRECTORY_INDEX_FILES="$WORKDIR/results/hisat2/index_files"
 # index basename to name all the index file 
 INDEX_BASENAME="$DIRECTORY_INDEX_FILES/index_file"
 
+
+# only if the directory does not exist it will be created 
+if [ ! -d $DIRECTORY_INDEX_FILES ]; then 
+    # option -p create the parents' folders if they do not exist
+    mkdir -p $DIRECTORY_INDEX_FILES
+fi 
+
 apptainer exec --bind /data/ \
          $CONTAINER hisat2-build $REFERENCE_SEQUENCE_FASTA $INDEX_BASENAME
