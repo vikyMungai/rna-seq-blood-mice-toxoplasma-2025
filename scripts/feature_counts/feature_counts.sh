@@ -46,3 +46,6 @@ apptainer exec --bind /data/ $CONTAINER_HISAT_SAMTOOLS featureCounts -p -a $ANNO
 # - The option `-s 2` is set in order to perform a reversely stranded read counting. 
 # - The option `-p` specify to featureCounts that we have paired-end strand. 
 
+# -t exon 
+# -g (by default )
+

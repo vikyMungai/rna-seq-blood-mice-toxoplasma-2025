@@ -43,8 +43,15 @@ if [ ! -d $OUTDIR ]; then
 fi 
 
 # trimming the adapters of the samples 
-apptainer exec --bind /data $CONTAINER fastp --in1 "$READ1" --in2 "$READ2" --out1 "$OUTDIR/${SAMPLE}_1_trimmed.fastq.gz" --out2 "$OUTDIR/${SAMPLE}_2_trimmed.fastq.gz" 
+apptainer exec --bind /data \
+                 $CONTAINER fastp \
+                 --detect_adapter_for_pe \
+                 --in1 "$READ1" --in2 "$READ2" \
+                 --out1 "$OUTDIR/${SAMPLE}_1_trimmed.fastq.gz" --out2 "$OUTDIR/${SAMPLE}_2_trimmed.fastq.gz" 
 # --in1 : fastq file for the Mate1 of the sample 
 # --in2 : fastq file for the Mate2 of the sample 
 # --out1 : file where you have the output of the fastp for the trimmed Mate1 
 # --out2 : file where you have the output of the fastp for the trimmed Mate2
+
+
+# add --detect_adapter_for_pe
