@@ -2,28 +2,24 @@
 # It creates a file with a list of all the sorted file in the specified directory 
 # in each line you have [SORTED_BAM_PATH] 
 
-# To use the bam file generated with the script "/hisat2/map_reads_convert_sort_bam.sh"
-# ./generate_sorted_bam_list.sh results/hisat2/index_sorted_bam_files/intermediate_results/sorted_bam_list.tsv 
-
-#   Parameters: 
-#           
-#           RELATIVE_PATH_OUTPUT_FILE (str): the relative path (from the project) of the outputfile. 
-#                                       As it is a relative do not put '/' at the beginning
-#    Returns: 
-#       Generate the output file describe at the RELATIVE_PATH_OUTPUT_FILE
-
-
 # working directory of the project 
 WORKDIR="/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025"
 # directory of sorted BAM files
-DIR_BAM_FILE="$WORKDIR/results/hisat2/map_reads_convert_sort_bam"
+DIR_BAM_FILE="$WORKDIR/results/hisat2/map_reads_summary_convert_sort_bam"
+# dirtectory output file 
+OUTPUT_DIR="$WORKDIR/results/hisat2/index_sorted_bam_files/intermediate_results"
 
 # output file's path 
-OUTPUT_FILE="$WORKDIR/$1"
+OUTPUT_FILE="$OUTPUT_DIR/sorted_bam_list.tsv"
+
+# only if the directory does not exist it will be created 
+if [ ! -d $OUTPUT_DIR ]; then 
+    # option -p create the parents' folders if they do not exist
+    mkdir -p $OUTPUT_DIR
+fi 
 
 # list all the .bam file 
 BAM_FILES=`ls $DIR_BAM_FILE/*_sorted.bam`
-
 
 
 for FILE in $BAM_FILES; do 

@@ -4,5 +4,6 @@
 /data
 # exclude the output of the results 
 /results
+/old_results
 # my trails scripts 
 /scripts/old_scripts

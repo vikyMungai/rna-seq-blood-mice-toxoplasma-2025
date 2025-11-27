@@ -1,0 +1,32 @@
+module_order:
+  - fastqc:
+      name: "FastQC (raw)"
+      anchor: "fastqc_raw"
+      info: "This section of the report shows FastQC results of the raw reads."
+      path_filters:
+        - "*_fastqc.zip"
+
+  - fastp: 
+      name: "Fastp"
+      anchor: "fastp_trimming"
+      info: "This section of the report shows the timming done with fastp."
+
+  - fastqc:
+      name: "FastQC (trimmed)"
+      anchor: "fastqc_trimmed"
+      info: "This section of the report shows FastQC results after adapter trimming."
+      path_filters:
+        - "*_trimmed_fastqc.zip"
+
+  - hisat2: 
+      name: "Hisat2"
+      anchor: "hisat2_mapping"
+      info: "This section of the report shows the mapping done with hisat2."
+
+  - featureCounts:
+      name: "FeatureCounts"
+      anchor: "feature_counts"
+      info: "This section of the report shows the count of the reads oer gene done with featureCounts."
+
+
+# the custom_content module can generate multiple sections from different input files.

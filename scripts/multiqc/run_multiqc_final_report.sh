@@ -11,16 +11,17 @@
 #SBATCH --error=/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/logs/errors/multiqc/error_multiqc_%J.err
 
 #   Parameters: 
-#           RELATIVE_PATH_INPUT_FILES (str): the relative path (from the project) of the files that multiqc has to process. 
+#           ABSOLUTE_PATH_INPUT_FILES (str): the relative path (from the project) of the files that multiqc has to process. 
 #                                       As it is a relative do not put '/' at the beginning   
-#           RELATIVE_PATH_OUTPUT_FILE (str): the relative path (from the project) of the outputfile. 
-#                                       As it is a relative do not put '/' at the beginning            
+#           NB: it can be one or more paths  
 
-# For the fastqc with raw blood samples
-# sbatch run_multiqc.sh results/fastqc results/multiqc
+# To run multiqc for fastqc before trimming, fastqc after trimming, hisat and featureCounts I passed each directory 
+# because the results were divided in structured folders into 'results'
 
-# For the fastqc with trimmed samples
-# sbatch run_multiqc.sh results/fastqc_after_trimming results/multiqc_after_trimming
+
+# sbatch run_multiqc_final_report.sh results/fastqc results/fastp results/fastqc_after_trimming results/hisat2/map_reads_summary_convert_sort_bam/alignment_summary results/feature_counts
+
+
 
 # path of the container multiqc
 CONTAINER="/containers/apptainer/multiqc-1.19.sif"
@@ -28,10 +29,10 @@ CONTAINER="/containers/apptainer/multiqc-1.19.sif"
 # directory of the project (this is an absolute path, so depending on which machine it is run it should be changed) 
 WORKDIR="/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025"
 # my result directory 
-OUTDIR="$WORKDIR/$2/"
-# store the list of fastqc zips into a variable 
-FASTQC_LIST=`ls $WORKDIR/$1/*fastqc.zip`
+OUTDIR="$WORKDIR/results/multiqc_final_report/"
 
+
+CONFIG_FILE="$WORKDIR/scripts/multiqc/config_multiqc_final_report.yaml"
 
 # only if the directory does not exist it will be created 
 if [ ! -d $OUTDIR ]; then 
@@ -39,10 +40,21 @@ if [ ! -d $OUTDIR ]; then
     mkdir -p $OUTDIR
 fi 
 
+# convert the relative path to absolute for all the arguments passed 
+DIR_LIST=""
+
+for REL_PATH in $@
+do
+        DIR_LIST="$DIR_LIST $WORKDIR/$REL_PATH"
+done
+
+
+
 # run multiqc quality check using the container 
 apptainer exec \
     --bind /data \
-    $CONTAINER multiqc -f -o "$OUTDIR" $FASTQC_LIST
+    $CONTAINER multiqc -f --config "$CONFIG_FILE" -o "$OUTDIR" $DIR_LIST
 
 # the option -f was added to force the overwrting of the report to simplify the re-execution of the command 
 # as in case the report already exists the multiqc command will give an error 
+ 

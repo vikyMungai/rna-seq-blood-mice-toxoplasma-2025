@@ -12,6 +12,9 @@
 #SBATCH --output=/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/logs/outputs/hisat2/map_reads_summary_convert_sort_bam/output_map_%A_%a.out
 #SBATCH --error=/data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/logs/errors/hisat2/map_reads_summary_convert_sort_bam/error_map_%A_%a.err
 
+# this files uses the file SAMPLELIST to read the path of the fastq files. So you have to check that the file exists.
+# In case it is not present, run the script '/scripts/shared/generate_sampleslist.sh' to generate it 
+
 # container path for hisat samtools 
 CONTAINER_HISAT_SAMTOOLS="/containers/apptainer/hisat2_samtools_408dfd02f175cd88.sif"
 
@@ -29,7 +32,7 @@ fi
 
 
 # file with the list of the fragments. See script `generate_sampleslist.sh` for further details
-SAMPLELIST="$WORKDIR/results/fastqc/intermediate_results/sampleslist.tsv"
+SAMPLELIST="$WORKDIR/results/fastqc_after_trimming/intermediate_results/sampleslist.tsv"
 
 # SLURM_ARRAY_TASK_ID we use the ID of the array to access the right line in the file samplelist.tsv
 # each slurm job will run all the command for each sample 

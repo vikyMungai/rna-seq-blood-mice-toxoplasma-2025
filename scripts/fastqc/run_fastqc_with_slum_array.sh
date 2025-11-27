@@ -18,6 +18,9 @@
 #           RELATIVE_PATH_OUTPUT_FILE (str): the relative path (from the project) of the outputfile. 
 #                                       As it is a relative do not put '/' at the beginning            
 
+# this files uses the file SAMPLELIST to read the path of the fastq files. So you have to check that the file exists.
+# In case it is not present, run the script '/scripts/shared/generate_sampleslist.sh' to generate it 
+
 # For the fastqc with raw blood samples
 # sbatch run_fastqc_with_slum_array.sh results/fastqc/intermediate_results/sampleslist.tsv results/fastqc/
 

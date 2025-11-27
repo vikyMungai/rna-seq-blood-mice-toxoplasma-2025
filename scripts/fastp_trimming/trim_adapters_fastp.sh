@@ -14,7 +14,7 @@
 
 
 # this files uses the file SAMPLELIST to read the path of the fastq files. So you have to check that the file exists.
-# In case it is not present, run the script '/scripts/fastqc/generate_sampleslist.sh' to generate it 
+# In case it is not present, run the script '/scripts/shared/generate_sampleslist.sh' to generate it 
 
 # path of the container fastp
 CONTAINER="/containers/apptainer/fastp_0.24.1.sif"
@@ -47,11 +47,15 @@ apptainer exec --bind /data \
                  $CONTAINER fastp \
                  --detect_adapter_for_pe \
                  --in1 "$READ1" --in2 "$READ2" \
-                 --out1 "$OUTDIR/${SAMPLE}_1_trimmed.fastq.gz" --out2 "$OUTDIR/${SAMPLE}_2_trimmed.fastq.gz" 
+                 --out1 "$OUTDIR/${SAMPLE}_1_trimmed.fastq.gz" --out2 "$OUTDIR/${SAMPLE}_2_trimmed.fastq.gz"  \
+                 --json "$OUTDIR/fastp.json" \
+                 --html "$OUTDIR/fastp.html"
+
+
 # --in1 : fastq file for the Mate1 of the sample 
 # --in2 : fastq file for the Mate2 of the sample 
 # --out1 : file where you have the output of the fastp for the trimmed Mate1 
 # --out2 : file where you have the output of the fastp for the trimmed Mate2
-
-
-# add --detect_adapter_for_pe
+# --detect_adapter_for_pe : by default, the auto-detection for adapter is for SE data input only, turn on this option to enable it for PE data.
+# --json : to specify where to generate the .json file 
+# --html : to specify where to generate the .html file 

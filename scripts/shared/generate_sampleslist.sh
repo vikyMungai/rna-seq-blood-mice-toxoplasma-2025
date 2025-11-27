@@ -5,14 +5,6 @@
 #   "[FRAGMENT_ID]  [MATE_1_FILE_ABSOLUTE_PATH]     [MATE_2_FILE_ABSOLUTE_PATH]"
 #   It needs to be run before running run_fastqc_with_slum_array.sh in order to have a formatted file 
 
-#   The name of the output name is fixed as it was needed also for the script run_fastqc_with_slum_array.sh 
-#   ./[scriptname] [FASTQ_FOLDER] [SUFFIX1] [RELATIVE_PATH_OUTPUT_FILE]
-#   
-#   For the trimmed fastq files  
-#   ./generate_sampleslist.sh /data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/results/fastp _1_trimmed.fastq.gz _2_trimmed.fastq.gz results/fastqc_after_trimming/intermediate_results/sampleslist.tsv
-#   For the blood raw samples 
-#   ./generate_sampleslist.sh /data/courses/rnaseq_course/toxoplasma_de/reads_Blood _1.fastq.gz _2.fastq.gz results/fastqc/intermediate_results/sampleslist.tsv
-
 
 #   Parameters: 
 #           FASTQ_FOLDER (string): path of the directory where all the fastq files are stored. Don't put the '/' in the end. 
@@ -26,7 +18,15 @@
 #                                       As it is a relative do not put '/' at the beginning
 #    Returns: 
 #       Generate the output file describe at the RELATIVE_PATH_OUTPUT_FILE
-        
+
+#   The name of the output name is fixed as it was needed also for the script run_fastqc_with_slum_array.sh 
+#   ./[scriptname] [FASTQ_FOLDER] [SUFFIX1] [RELATIVE_PATH_OUTPUT_FILE]
+#   
+#   For the trimmed fastq files  
+#   ./generate_sampleslist.sh /data/users/vmungai/rna_seq_projects/rna-seq-blood-mice-toxoplasma-2025/results/fastp _1_trimmed.fastq.gz _2_trimmed.fastq.gz results/fastqc_after_trimming/intermediate_results/sampleslist.tsv
+#   For the blood raw samples 
+#   ./generate_sampleslist.sh /data/courses/rnaseq_course/toxoplasma_de/reads_Blood _1.fastq.gz _2.fastq.gz results/fastqc/intermediate_results/sampleslist.tsv
+ 
 
 # save the path of the directory into the variable FASTQ_FOLDER
 FASTQ_FOLDER="$1"
@@ -46,7 +46,7 @@ OUTPUT_FILE="$WORKDIR/$RELATIVE_PATH_OUTPUT_FILE"
 
 # It goes through all the files that has the extention ".fastq.gz" and the name ends with "_1"
 # So it searches all the fastq fukes with the reads of the forward strand of the fragment. 
-for FILE in $FASTQ_FOLDER/*"$SUFFIX1"
+for FILE in $FASTQ_FOLDER/*$SUFFIX1
 do 
     # for each FILE it removes its end, which correspond to the pattern "_1.fastq.gz" and
     #it saves the remaning part of the path into the variable PREFIX
