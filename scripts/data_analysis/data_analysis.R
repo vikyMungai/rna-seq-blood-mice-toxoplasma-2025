@@ -23,6 +23,10 @@ library(clusterProfiler) # had a problem with the package 'enrichplot'
 # library to plot enrichment results 
 library(ggplot2)
 
+### directories to store plots
+dir_step5 <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/5_exploratory_data_analysis"
+dir_step6 <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/6_differential_analysis"
+dir_step7 <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/7_overrepresentation_analysis"
 
 #
 # STEP 5: Exploratory data analysis
@@ -86,23 +90,75 @@ dds <- DESeq(dds)
 # for PCA and small samples is good to use rlog, because it is more robust than vst 
 rld <- rlog(dds, blind=TRUE)
 
+# directory where all the plots of step5 will be stored 
+setwd(dir_step5)
+
 # plotting PCA 
 pcaData <- plotPCA(rld, intgroup = "Group", returnData=TRUE) # ntop = 500 as default 
 percentVar <- round(100 * attr(pcaData, "percentVar"))
 sample_names <- rownames(col_data)
 ggplot(pcaData, aes(PC1, PC2, color=Group)) +
-  geom_text(
-    mapping = aes(label = sample_names), 
-    # we are interested in outliers so it is not a problem if we cannot see all the samples names
-    check_overlap = TRUE,  
-    position = position_nudge(x = NULL, y = 3.5)
-  ) +
   geom_point(size=3) +
+  geom_text_repel(
+    aes(label = sample_names), 
+    max.overlaps = Inf,  
+    show.legend = FALSE
+  ) + 
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
   xlim(-70, 68) + 
   scale_y_continuous(breaks = scales::breaks_width(20)) +
   coord_fixed()
+ggsave("plotPCA.pdf")
+
+# Count the knocked-out Ifnar and Ifngr genes to verify that the knockout was successful
+# Ifnar1: ENSMUSG00000022967
+# Ifnar2: ENSMUSG00000022971
+# dds_gene_symbols <- 
+d <- plotCounts(dds, gene="ENSMUSG00000022967", intgroup="Group", 
+                returnData=TRUE)
+ggplot(d, aes(x=Group, y=count)) + 
+  geom_point(position=position_jitter(w=0.1,h=0)) + 
+  scale_y_log10(breaks = scales::log_breaks(n = 6, base = 10)) + 
+  xlab("Genotype and Condition") + 
+  ylab("Normalised counts") + 
+  ggtitle("Ifnar1 - ENSMUSG00000022967 counts") + 
+  theme(plot.title = element_text(margin = margin(t = 10, b = 10)))
+ggsave("Normalised_counts_KO_Ifnar1.pdf")
+d <- plotCounts(dds, gene="ENSMUSG00000022971", intgroup="Group", 
+                returnData=TRUE)
+ggplot(d, aes(x=Group, y=count)) + 
+  geom_point(position=position_jitter(w=0.1,h=0)) + 
+  scale_y_log10(breaks = scales::log_breaks(n = 6, base = 10)) + 
+  xlab("Genotype and Condition") + 
+  ylab("Normalised counts") + 
+  ggtitle("Ifnar2 - ENSMUSG00000022971 counts") + 
+  theme(plot.title = element_text(margin = margin(t = 10, b = 10)))
+ggsave("Normalised_counts_KO_Ifnar2.pdf")
+
+# Ifngr1: ENSMUSG00000020009
+# Ifngr2: ENSMUSG00000022965
+# dds_gene_symbols <- 
+d <- plotCounts(dds, gene="ENSMUSG00000020009", intgroup="Group", 
+                returnData=TRUE)
+ggplot(d, aes(x=Group, y=count)) + 
+  geom_point(position=position_jitter(w=0.1,h=0)) + 
+  scale_y_log10(breaks = scales::log_breaks(n = 6, base = 10)) + 
+  xlab("Genotype and Condition") + 
+  ylab("Normalised counts") + 
+  ggtitle("Ifngr1 - ENSMUSG00000020009 counts") + 
+  theme(plot.title = element_text(margin = margin(t = 10, b = 10)))
+ggsave("Normalised_counts_KO_Ifngr1.pdf")
+d <- plotCounts(dds, gene="ENSMUSG00000022965", intgroup="Group", 
+                returnData=TRUE)
+ggplot(d, aes(x=Group, y=count)) + 
+  geom_point(position=position_jitter(w=0.1,h=0)) + 
+  scale_y_log10(breaks = scales::log_breaks(n = 6, base = 10)) + 
+  xlab("Genotype and Condition") + 
+  ylab("Normalised counts") + 
+  ggtitle("Ifngr2 - ENSMUSG00000020009 counts") + 
+  theme(plot.title = element_text(margin = margin(t = 10, b = 10)))
+ggsave("Normalised_counts_KO_Ifngr2.pdf")
 
 
 #
@@ -128,233 +184,377 @@ summary(res_WT_Case_vs_WT_Control)
 summary(res_DKO_Case_vs_DKO_Control)
 summary(res_DKO_Control_vs_WT_Control)
 
-# ----
-# Volcano plots 
-#-----
+# --------------------------------------------------#
+#                     VOLCANO PLOTS                 #
+# --------------------------------------------------#
 
-add_col_gene_name <- function(results_DESeq){
-  #   Add the column 'gene_name' with all the gene names 
+# LFC and padj thresholds 
+LFC_limit = 1 
+padj_limit = 0.01
+
+# directory specific for the LFC > 1 and padj < 0.05
+dir_step6_LFC_1_padj_005 <- paste0(dir_step6, "/LFC_1_padj_0-05")
+# directory specific for the LFC > 1 and padj < 0.01 
+dir_step6_LFC_1_padj_001 <- paste0(dir_step6, "/LFC_1_padj_0-01")
+setwd(dir_step6_LFC_1_padj_001)
+
+# ----------------------------------------------------------------------------------------------
+# functions used in step 6
+# ----------------------------------------------------------------------------------------------
+
+add_col_gene_id <- function(results_DESeq){
+  #   Add the column 'gene_id' with all the gene names 
   #
   #   Parameter: 
   #     results_DESeq: the results of DESeq 
   #
   #   Returns: 
   #     the results_DESeq with the new column added 
-  results_DESeq$gene_name <- rownames(results_DESeq)
+  results_DESeq$gene_id <- rownames(results_DESeq)
   return (
     results_DESeq
   )
 }
 
-add_col_express_level<- function(results_DESeq, LFC_thresholds = c(-1,1), p_value_threshold = 0.05){
-  #   Add the column 'express_level' with all the gene names 
+
+add_col_express_level <- function(results_DESeq, LFC_threshold = LFC_limit, padj_threshold = padj_limit){
+  #   Add the column 'express_level' to specify the expression gene level of the 
   #
   #   Parameter: 
   #     results_DESeq (DESeqResults): the results of DESeq 
-  #     LFC_thresholds (numeric): a numeric vector with the higher and lower thresholds 
-  #                               default value: c(-1, 1) 
-  #     p_value_threshold (numeric): a numeric vector with the threshold for the p-value
-  #                               default value: 0.05 (5%)
+  #     LFC_threshold (numeric): threshold for LogFoldChange
+  #     padj_threshold (numeric): the threshold for the adjusted p-value
+  #
   #
   #   Returns: 
   #     the results_DESeq with the new column added 
   
   results_DESeq$express_level <- "Not significant"
-  # if log2Foldchange > 1 and pvalue < 0.05, set as "Upregulated" 
-  results_DESeq$express_level[results_DESeq$log2FoldChange > LFC_thresholds[2] & results_DESeq$pvalue < p_value_threshold] <- "Upregulated"
-  # if log2Foldchange < -1 and pvalue < 0.05, set as "Downregulated" 
-  results_DESeq$express_level[results_DESeq$log2FoldChange < LFC_thresholds[1] & results_DESeq$pvalue < p_value_threshold] <- "Downregulated"
-  # Set the labels of the possible interesting genes (based on their p-value
-  # they also need to be a biological significant, so Downregulated or Upregulated)
-  results_DESeq$gene_label <- ifelse(results_DESeq$gene_name %in% head(results_DESeq[order(results_DESeq$padj), "gene_name"], 30 ) & (results_DESeq$express_level == "Downregulated" | results_DESeq$express_level == "Upregulated" ), results_DESeq$gene_name, "")
-    return (
-    results_DESeq
-  )
-}
-
-add_col_express_level <- function(results_DESeq, LFC_thresholds = c(-1,1), p_value_threshold = 0.05){
-  #   Add the column 'express_level' with all the gene names 
-  #
-  #   Parameter: 
-  #     results_DESeq (DESeqResults): the results of DESeq 
-  #     LFC_thresholds (numeric): a numeric vector with the higher and lower thresholds 
-  #                               default value: c(-1, 1) 
-  #     p_value_threshold (numeric): a numeric vector with the threshold for the p-value
-  #                               default value: 0.05 (5%)
-  #
-  #   Returns: 
-  #     the results_DESeq with the new column added 
-  
-  results_DESeq$express_level <- "Not significant"
-  # if log2Foldchange > 1 and pvalue < 0.05, set as "Upregulated" 
-  results_DESeq$express_level[results_DESeq$log2FoldChange > LFC_thresholds[2] & results_DESeq$pvalue < p_value_threshold] <- "Upregulated"
-  # if log2Foldchange < -1 and pvalue < 0.05, set as "Downregulated" 
-  results_DESeq$express_level[results_DESeq$log2FoldChange < LFC_thresholds[1] & results_DESeq$pvalue < p_value_threshold] <- "Downregulated"
+  # if log2Foldchange > LFC_threshold and padj < padj_threshold, set as "Upregulated" 
+  results_DESeq$express_level[results_DESeq$log2FoldChange > LFC_threshold & results_DESeq$padj < padj_threshold] <- "Upregulated"
+  # if log2Foldchange < -LFC_threshold and padj < padj_threshold, set as "Downregulated" 
+  results_DESeq$express_level[results_DESeq$log2FoldChange < -LFC_threshold & results_DESeq$padj < padj_threshold] <- "Downregulated"
   
   return (
     results_DESeq
   )
 }
 
-#TODO: remove limit from p-value (put a more strict value for the p-value )
-add_col_gene_label_up_down_regulated <- function(results_DESeq, LFC_thresholds = c(-1,1), p_value_threshold = 0.05){
-  #   Add the column 'gene_label'. Only the interesting genes will have a label. 
+add_col_gene_label_up_down_regulated <- function(results_DESeq, padj_threshold = padj_limit){
+  #   Add the column 'gene_label', the ENSEMBL gene ID if it is an interesting gene (Upregulated or downregulated), otherwise empty string 
   #
   #   Parameter: 
   #     results_DESeq (DESeqResults): the results of DESeq 
-  #     LFC_thresholds (numeric): a numeric vector with the higher and lower thresholds 
-  #                               default value: c(-1, 1) 
-  #     p_value_threshold (numeric): a numeric vector with the threshold for the p-value
-  #                               default value: 0.05 (5%)
+  #     padj_threshold (numeric): the threshold for the adjusted p-value
   #
-  #   Returns: 
-  #     the results_DESeq with the new column added 
-  
-  # Set the labels of the possible interesting genes (based on their p-value
-  # they also need to be a biological significant, so Downregulated or Upregulated)
-  results_DESeq$gene_label <- ifelse(results_DESeq$gene_name %in% results_DESeq[ which(results_DESeq$padj), "gene_name"] & (results_DESeq$express_level == "Downregulated" | results_DESeq$express_level == "Upregulated" ), results_DESeq$gene_name, "")
-  return (
-    results_DESeq
-  )
-}
-
-add_col_gene_label_up_regulated <- function(results_DESeq, LFC_threshold = 1, p_value_threshold = 0.05){
-  #   Add the column 'gene_label'. Only the interesting up-regulated genes will have a label. 
-  #
-  #   Parameter: 
-  #     results_DESeq (DESeqResults): the results of DESeq 
-  #     LFC_thresholds (numeric): the threshold for the FLC  
-  #                               default value:  1 
-  #     p_value_threshold (numeric): a numeric vector with the threshold for the p-value
-  #                               default value: 0.05 (5%)
   #
   #   Returns: 
   #     the results_DESeq with the new column added 
   
   # Set the labels of the possible interesting genes (based on their p-value
   # they also need to be a biological significant, so Down-regulated or Up-regulated)
-  results_DESeq$gene_label <- ifelse(results_DESeq$gene_name %in% head(results_DESeq[order(results_DESeq$padj), "gene_name"], 30 ) & (results_DESeq$express_level == "Upregulated" ), results_DESeq$gene_name, "")
+  results_DESeq$gene_label <- ifelse( results_DESeq$padj < padj_threshold & (results_DESeq$express_level == "Downregulated" | results_DESeq$express_level == "Upregulated" ), results_DESeq$gene_id, "")
   return (
     results_DESeq
   )
 }
 
-add_col_gene_label_up_down_regulated <- function(results_DESeq, LFC_threshold = -1, p_value_threshold = 0.05){
-  #   Add the column 'gene_label'. Only the interesting down-regulated genes will have a label. 
+add_col_gene_label_up_regulated <- function(results_DESeq, padj_threshold = padj_limit){
+  #   Add the column 'gene_label', the ENSEMBL gene ID if it is an interesting gene (Up-regulated only), otherwise empty string 
   #
   #   Parameter: 
   #     results_DESeq (DESeqResults): the results of DESeq 
-  #     LFC_thresholds (numeric): the threshold for the FLC  
-  #                               default value:  -1 
-  #     p_value_threshold (numeric): a numeric vector with the threshold for the p-value
-  #                               default value: 0.05 (5%)
+  #     padj_threshold (numeric): the threshold for the adjusted p-value
   #
   #   Returns: 
   #     the results_DESeq with the new column added 
   
-  # Set the labels of the possible interesting genes (based on their p-value
-  # they also need to be a biological significant, so Downregulated or Upregulated)
-  results_DESeq$gene_label <- ifelse(results_DESeq$gene_name %in% head(results_DESeq[order(results_DESeq$padj), "gene_name"], 30 ) & (results_DESeq$express_level == "Downregulated"), results_DESeq$gene_name, "")
+  # Set the labels of the possible interesting up-regulated genes (based on their p-value)
+  results_DESeq$gene_label <- ifelse( results_DESeq$padj < padj_threshold & (results_DESeq$express_level == "Upregulated" ), results_DESeq$gene_id, "")
+  return (
+    results_DESeq
+  )
+}
+
+add_col_gene_label_down_regulated <- function(results_DESeq, padj_threshold = padj_limit){
+  #   Add the column 'gene_label', the ENSEMBL gene ID if it is an interesting gene (Down-regulated only), otherwise empty string 
+  #
+  #   Parameter: 
+  #     results_DESeq (DESeqResults): the results of DESeq 
+  #     padj_threshold (numeric): a numeric vector with the threshold for the p-value
+  #
+  #   Returns: 
+  #     the results_DESeq with the new column added 
+  
+  # Set the labels of the possible interesting down-regulated genes (based on their p-value)
+  results_DESeq$gene_label <- ifelse(results_DESeq$padj < padj_threshold & (results_DESeq$express_level == "Downregulated"), results_DESeq$gene_id, "")
   return (
     results_DESeq
   )
 }
 
 
-
-volcano_ggplot <- function(results_DESeq, plot_title, log2_fold_change = 1, p_value = 0.05){
-    #   Print the volcano ggplot of the results_DESeq with specific settings
-    #
-    #   Parameter: 
-    #     results_DESeq: the results of DESeq 
-    #     plot_title: the title of the plot 
-    #
-    #   Returns: 
-    #     None - show the plot in the 'Plots' window
+volcano_ggplot <- function(results_DESeq, plot_title, output_file, interesting_genes = c(), log2_fold_change = LFC_limit, padj_value = padj_limit){
+  #   Print the volcano ggplot of the results_DESeq with specific settings
+  #
+  #   Parameter: 
+  #     results_DESeq: the results of DESeq 
+  #     plot_title: the title of the plot 
+  #
+  #   Returns: 
+  #     character - vector with the list of the interesting genes
   
-    ggplot(data = results_DESeq, aes(x = log2FoldChange, y = -log10(pvalue), col = express_level)) + 
-      geom_vline(xintercept = c(-log2_fold_change, log2_fold_change), col = "gray", linetype = 'dashed') + 
-      geom_hline(yintercept = -log10(p_value), col = "gray", linetype = 'dashed') + 
-      geom_point(size = 1) +
-      scale_color_manual(values = c("blue", "grey", "plum"), 
-                         labels = c("Downregulated", "Not significant", "Upregulated")) + 
-      coord_cartesian(ylim = c(0, 300), xlim = c(-20, 15)) + 
-      labs(color = 'Gene express level',
-           x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
-      ggtitle(plot_title) +
-      # max overlaps was chosen Inf to not lose labels 
-      geom_text_repel(aes(label = gene_label), max.overlaps = Inf, show.legend = FALSE)
+ 
+  # TODO: mettere a posto come visualizzare i gene_symbols e non ENSEMBL gene IDs 
   
+  # only plotting a subset of the interesting genes 
+  top_genes <- head(interesting_genes[order(interesting_genes$padj), "gene_id"], 20)
+  # gene_symbols column rappresents the filtering for the labels in the plot 
+  results_DESeq$gene_symbols <- ifelse( results_DESeq$gene_id %in% top_genes,
+                                        results_DESeq$gene_id, "")
+  # TODO: for DB 
+  print("for DB")
+  print( results_DESeq$gene_symbols[which(results_DESeq$gene_symbols != "")])
+  
+  # obtain the gene symbols only for the genes I want to plot 
+  symbols <- mapIds(org.Mm.eg.db, keys =  top_genes, column = "SYMBOL", keytype = "ENSEMBL", multiVals = "first")
+  # replace NA with "" for the ggplot 
+  symbols[is.na(symbols)] <- ""
+  
+  all_symbols <- ifelse(results_DESeq$gene_symbols != "", 
+                        symbols[results_DESeq$gene_symbols], "")
+  
+  ggplot(data = results_DESeq, aes(x = log2FoldChange, y = -log10(pvalue), col = express_level)) + 
+    geom_vline(xintercept = c(-log2_fold_change, log2_fold_change), col = "gray", linetype = 'dashed') + 
+    geom_hline(yintercept = padj_value, col = "gray", linetype = 'dashed') + 
+    geom_point(size = 1) +
+    scale_color_manual(values = c("blue", "grey", "plum"), 
+                       labels = c("Downregulated", "Not significant", "Upregulated")) + 
+    coord_cartesian(ylim = c(0, 300), xlim = c(-20, 15)) + 
+    labs(color = 'Gene express level', x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
+    ggtitle(plot_title) +
+    # max overlaps was chosen Inf to not lose labels 
+    geom_text_repel(aes(label = all_symbols), size = 2, max.overlaps = Inf, show.legend = FALSE)
+  
+  ggsave(output_file)
+  
+  return(
+    top_genes
+  )
 
 }
    
 
 
-# --- Volcano plot for the DKO infected vs WT infected
+# ----------------------------------------------------------------------------------------------
+# Volcano plot for the DKO infected vs WT infected
+# ----------------------------------------------------------------------------------------------
 
-# Add the column gene_name to res_DKO_Case_vs_WT_Case 
-res_DKO_Case_vs_WT_Case <- add_col_gene_name(res_DKO_Case_vs_WT_Case)
-
-# Add a column express_level to specify if they are UP- or DOWN- regulated with a significant p-value 
+# Add the column gene_id to res_DKO_Case_vs_WT_Case 
+res_DKO_Case_vs_WT_Case <- add_col_gene_id(res_DKO_Case_vs_WT_Case)
+# Add a column express_level to specify if they are UP- or DOWN- regulated with a adjusted p-value = padj_limit
 res_DKO_Case_vs_WT_Case <- add_col_express_level(res_DKO_Case_vs_WT_Case)
 
-# Add the column gene_label for both up-regulated and down-regulated 
-res_DKO_Case_vs_WT_Case <- add_col_gene_label_up_down_regulated(res_DKO_Case_vs_WT_Case, FLC_thresholds, p_value_threshold)
 
-volcano_ggplot(res_DKO_Case_vs_WT_Case, 'Volcano plots for DKO not infected vs WT not infected')
+# --- both up-regulated and down-regulated 
 
-# the ENSEMBL gene IDs that were filtered with the LFC = 1 and p-value = 0.05 
-int_genes_DKO_Case_vs_WT_Case <- res_DKO_Case_vs_WT_Case[which(res_DKO_Case_vs_WT_Case$gene_label != ""),]
+# Add the column gene_label 
+res_DKO_Case_vs_WT_Case_up_down_regulated <- add_col_gene_label_up_down_regulated(res_DKO_Case_vs_WT_Case)
 
-
-# --- Volcano plot for the WT infected vs WT not infected
-
-FLC_thresholds <- c(-1, 1)
-p_value_threshold <- 0.05
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Case_vs_WT_Case_up_down_regulated <- res_DKO_Case_vs_WT_Case_up_down_regulated[which(res_DKO_Case_vs_WT_Case_up_down_regulated$gene_label != ""),]
 
 
-# Add the column gene_name to res_WT_Case_vs_WT_Control
-res_WT_Case_vs_WT_Control <- add_col_gene_name(res_WT_Case_vs_WT_Control)
+volcano_ggplot(res_DKO_Case_vs_WT_Case_up_down_regulated, 
+               'Volcano plots for DKO infected vs WT infected up/down-regulated', 
+               'volcano_plot_DKO_Case_vs_WT_Case_up_down.pdf', 
+               int_genes_DKO_Case_vs_WT_Case_up_down_regulated)
 
-# Add a column express_level to specify if they are UP- or DOWN- regulated with a significant p-value 
-res_WT_Case_vs_WT_Control <- add_col_express_level(res_WT_Case_vs_WT_Control, FLC_thresholds, p_value_threshold)
-# Add the column gene_label for both up-regulated and down-regulated 
-res_WT_Case_vs_WT_Control <- add_col_gene_label_up_down_regulated(res_WT_Case_vs_WT_Control, FLC_thresholds, p_value_threshold)
 
-volcano_ggplot(res_WT_Case_vs_WT_Control, 'Volcano plots for WT infected vs WT not infected')
 
-# the ENSEMBL gene IDs that were filtered with the LFC = 1 and p-value = 0.05 
-int_genes_WT_Case_vs_WT_Control <- res_WT_Case_vs_WT_Control[which(res_WT_Case_vs_WT_Control$gene_label != ""),]
+# --- only up-regulated 
 
-# --- Volcano plot for the DKO infected vs DKO not infected
+# Add the column gene_label 
+res_DKO_Case_vs_WT_Case_up_regulated <- add_col_gene_label_up_regulated(res_DKO_Case_vs_WT_Case)
 
-# Add the column gene_name to res_DKO_Case_vs_DKO_Control
-res_DKO_Case_vs_DKO_Control <- add_col_gene_name(res_DKO_Case_vs_DKO_Control)
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Case_vs_WT_Case_up_regulated <- res_DKO_Case_vs_WT_Case_up_regulated[which(res_DKO_Case_vs_WT_Case_up_regulated$gene_label != ""),]
 
-# Add a column express_level to specify if they are UP- or DOWN- regulated with a significant p-value 
-res_DKO_Case_vs_DKO_Control <- add_col_express_level(res_DKO_Case_vs_DKO_Control, FLC_thresholds, p_value_threshold)
-# Add the column gene_label for both up-regulated and down-regulated 
-res_DKO_Case_vs_DKO_Control <- add_col_gene_label_up_down_regulated(res_DKO_Case_vs_DKO_Control, FLC_thresholds, p_value_threshold)
+volcano_ggplot(res_DKO_Case_vs_WT_Case_up_regulated, 
+               'Volcano plots for DKO infected vs WT infected up-regulated', 
+               'volcano_plot_DKO_Case_vs_WT_Case_up.pdf', 
+               int_genes_DKO_Case_vs_WT_Case_up_regulated)
 
-volcano_ggplot(res_DKO_Case_vs_DKO_Control, 'Volcano plots for DKO infected vs DKO not infected')
+# --- only down-regulated 
 
-# the ENSEMBL gene IDs that were filtered with the LFC = 1 and p-value = 0.05 
-int_genes_DKO_Case_vs_DKO_Control <- res_DKO_Case_vs_DKO_Control[which(res_DKO_Case_vs_DKO_Control$gene_label != ""),]
+# Add the column gene_label 
+res_DKO_Case_vs_WT_Case_down_regulated <- add_col_gene_label_down_regulated(res_DKO_Case_vs_WT_Case)
 
-# --- Volcano plot for the DKO not infected vs WT not infected
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Case_vs_WT_Case_down_regulated <- res_DKO_Case_vs_WT_Case_down_regulated[which(res_DKO_Case_vs_WT_Case_down_regulated$gene_label != ""),]
 
-# Add the column gene_name to res_DKO_Control_vs_WT_Control
-res_DKO_Control_vs_WT_Control <- add_col_gene_name(res_DKO_Control_vs_WT_Control)
+volcano_ggplot(res_DKO_Case_vs_WT_Case_down_regulated, 
+               'Volcano plots for DKO infected vs WT infected down-regulated', 
+               'volcano_plot_DKO_Case_vs_WT_Case_down.pdf', 
+               int_genes_DKO_Case_vs_WT_Case_down_regulated)
 
-# Add a column express_level to specify if they are UP- or DOWN- regulated with a significant p-value 
-res_DKO_Control_vs_WT_Control <- add_col_express_level(res_DKO_Control_vs_WT_Control, FLC_thresholds, p_value_threshold)
-# Add the column # Add the column gene_label for both up-regulated and down-regulated 
-res_DKO_Case_vs_DKO_Control <- add_col_gene_label_up_down_regulated(res_DKO_Case_vs_DKO_Control, FLC_thresholds, p_value_threshold)
 
-volcano_ggplot(res_DKO_Control_vs_WT_Control, 'Volcano plots for DKO not infected vs WT not infected')
 
-# the ENSEMBL gene IDs that were filtered with the LFC = 1 and p-value = 0.05 
-int_genes_DKO_Control_vs_WT_Control <- res_DKO_Control_vs_WT_Control[which(res_DKO_Control_vs_WT_Control$gene_label != ""),]
+# ----------------------------------------------------------------------------------------------
+# Volcano plot for the WT infected vs WT not infected
+# ----------------------------------------------------------------------------------------------
+
+# Add the column gene_id to res_WT_Case_vs_WT_Control
+res_WT_Case_vs_WT_Control <- add_col_gene_id(res_WT_Case_vs_WT_Control)
+
+# Add a column express_level to specify if they are UP- or DOWN- regulated with adjusted padj_limit  
+res_WT_Case_vs_WT_Control <- add_col_express_level(res_WT_Case_vs_WT_Control)
+
+# --- both up-regulated and down-regulated 
+
+# Add the column gene_label
+res_WT_Case_vs_WT_Control_up_down_regulated <- add_col_gene_label_up_down_regulated(res_WT_Case_vs_WT_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_WT_Case_vs_WT_Control_up_down_regulated <- res_WT_Case_vs_WT_Control_up_down_regulated[which(res_WT_Case_vs_WT_Control_up_down_regulated$gene_label != ""),]
+
+volcano_ggplot(res_WT_Case_vs_WT_Control_up_down_regulated, 
+               'Volcano plots for WT infected vs WT not infected', 
+               'volcano_plot_WT_Case_vs_WT_Control_up_down.pdf', 
+               int_genes_WT_Case_vs_WT_Control_up_down_regulated)
+
+
+# --- only up-regulated 
+
+# Add the column gene_label
+res_WT_Case_vs_WT_Control_up_regulated <- add_col_gene_label_up_regulated(res_WT_Case_vs_WT_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_WT_Case_vs_WT_Control_up_regulated <- res_WT_Case_vs_WT_Control_up_regulated[which(res_WT_Case_vs_WT_Control_up_regulated$gene_label != ""),]
+
+volcano_ggplot(res_WT_Case_vs_WT_Control_up_regulated, 
+               'Volcano plots for WT infected vs WT not infected up-regulated', 
+               'volcano_plot_WT_Case_vs_WT_Control_up.pdf', 
+               int_genes_WT_Case_vs_WT_Control_up_regulated)
+
+
+# --- only down-regulated 
+
+# Add the column gene_label
+res_WT_Case_vs_WT_Control_down_regulated <- add_col_gene_label_down_regulated(res_WT_Case_vs_WT_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_WT_Case_vs_WT_Control_down_regulated <- res_WT_Case_vs_WT_Control_down_regulated[which(res_WT_Case_vs_WT_Control_down_regulated$gene_label != ""),]
+
+volcano_ggplot(res_WT_Case_vs_WT_Control_down_regulated, 
+               'Volcano plots for WT infected vs WT not infected down-regulated', 
+               'volcano_plot_WT_Case_vs_WT_Control_down.pdf', 
+               int_genes_WT_Case_vs_WT_Control_down_regulated)
+
+
+# ----------------------------------------------------------------------------------------------
+# Volcano plot for the DKO infected vs DKO not infected
+# ---------------------------------------------------------------------------------------------
+
+# Add the column gene_id to res_DKO_Case_vs_DKO_Control
+res_DKO_Case_vs_DKO_Control <- add_col_gene_id(res_DKO_Case_vs_DKO_Control)
+
+# Add a column express_level to specify if they are UP- or DOWN- regulated with adjusted padj_limit
+res_DKO_Case_vs_DKO_Control <- add_col_express_level(res_DKO_Case_vs_DKO_Control)
+
+
+# --- both up-regulated and down-regulated 
+
+# Add the column gene_label 
+res_DKO_Case_vs_DKO_Control_up_down_regulated <- add_col_gene_label_up_down_regulated(res_DKO_Case_vs_DKO_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Case_vs_DKO_Control_up_down_regulated <- res_DKO_Case_vs_DKO_Control_up_down_regulated[which(res_DKO_Case_vs_DKO_Control_up_down_regulated$gene_label != ""),]
+
+volcano_ggplot(res_DKO_Case_vs_DKO_Control_up_down_regulated, 
+               'Volcano plots for DKO infected vs DKO not infected up/down-regulated', 
+               'volcano_plot_DKO_Case_vs_DKO_Control_up_down.pdf', 
+               int_genes_DKO_Case_vs_DKO_Control_up_down_regulated)
+
+
+# --- only up-regulated 
+
+# Add the column gene_label 
+res_DKO_Case_vs_DKO_Control_up_regulated <- add_col_gene_label_up_regulated(res_DKO_Case_vs_DKO_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Case_vs_DKO_Control_up_regulated <- res_DKO_Case_vs_DKO_Control_up_regulated[which(res_DKO_Case_vs_DKO_Control_up_regulated$gene_label != ""),]
+
+volcano_ggplot(res_DKO_Case_vs_DKO_Control_up_regulated, 
+               'Volcano plots for DKO infected vs DKO not infected up-regulated', 
+               'volcano_plot_DKO_Case_vs_DKO_Control_up.pdf', 
+               int_genes_DKO_Case_vs_DKO_Control_up_regulated)
+
+# --- only down-regulated 
+
+# Add the column gene_label 
+res_DKO_Case_vs_DKO_Control_down_regulated <- add_col_gene_label_down_regulated(res_DKO_Case_vs_DKO_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Case_vs_DKO_Control_down_regulated <- res_DKO_Case_vs_DKO_Control_down_regulated[which(res_DKO_Case_vs_DKO_Control_down_regulated$gene_label != ""),]
+
+volcano_ggplot(res_DKO_Case_vs_DKO_Control_down_regulated, 
+               'Volcano plots for DKO infected vs DKO not infected down-regulated', 
+               'volcano_plot_DKO_Case_vs_DKO_Control_down.pdf', 
+               int_genes_DKO_Case_vs_DKO_Control_down_regulated)
+
+
+# ----------------------------------------------------------------------------------------------
+# Volcano plot for the DKO not infected vs WT not infected
+# ----------------------------------------------------------------------------------------------
+
+# Add the column gene_id to res_DKO_Control_vs_WT_Control
+res_DKO_Control_vs_WT_Control <- add_col_gene_id(res_DKO_Control_vs_WT_Control)
+
+# Add a column express_level to specify if they are UP- or DOWN- regulated with an adjusted padj_limit
+res_DKO_Control_vs_WT_Control <- add_col_express_level(res_DKO_Control_vs_WT_Control)
+
+
+# --- both up-regulated and down-regulated 
+
+# Add the column gene_label
+res_DKO_Control_vs_WT_Control_up_down_regulated <- add_col_gene_label_up_down_regulated(res_DKO_Control_vs_WT_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Control_vs_WT_Control_up_down_regulated <- res_DKO_Control_vs_WT_Control_up_down_regulated[which(res_DKO_Control_vs_WT_Control_up_down_regulated$gene_label != ""),]
+
+volcano_ggplot(res_DKO_Control_vs_WT_Control_up_down_regulated, 
+               'Volcano plots for DKO not infected vs WT not infected up/down-regulated', 
+               'volcano_plot_DKO_Control_vs_WT_Control_up_down.pdf',
+               int_genes_DKO_Control_vs_WT_Control_up_down_regulated)
+
+
+# --- only up-regulated 
+
+# Add the column gene_label
+res_DKO_Control_vs_WT_Control_up_regulated <- add_col_gene_label_up_regulated(res_DKO_Control_vs_WT_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Control_vs_WT_Control_up_regulated <- res_DKO_Control_vs_WT_Control_up_regulated[which(res_DKO_Control_vs_WT_Control_up_regulated$gene_label != ""),]
+
+volcano_ggplot(res_DKO_Control_vs_WT_Control_up_regulated, 
+               'Volcano plots for DKO not infected vs WT not infected up-regulated', 
+               'volcano_plot_DKO_Control_vs_WT_Control_up.pdf', 
+               int_genes_DKO_Control_vs_WT_Control_up_regulated)
+
+
+# --- only down-regulated 
+
+# Add the column gene_label
+res_DKO_Control_vs_WT_Control_down_regulated <- add_col_gene_label_down_regulated(res_DKO_Control_vs_WT_Control)
+
+# the ENSEMBL gene IDs that were filtered with the LFC_limit and padj_limit 
+int_genes_DKO_Control_vs_WT_Control_down_regulated <- res_DKO_Control_vs_WT_Control_down_regulated[which(res_DKO_Control_vs_WT_Control_down_regulated$gene_label != ""),]
+
+volcano_ggplot(res_DKO_Control_vs_WT_Control_down_regulated, 
+               'Volcano plots for DKO not infected vs WT not infected down-regulated', 
+               'volcano_plot_DKO_Control_vs_WT_Control_down.pdf', 
+               int_genes_DKO_Control_vs_WT_Control_down_regulated)
 
 
 # investigate the expression level of interesting genes 
@@ -380,12 +580,22 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
   #     enrichResult - enrichGO_results 
   #     all the plots saved in one pdf the output_path 
   
+
+  
+  #filter out the genes that don't have an adjust p-value 
+  dds_results_filtered <- dds_results[!is.na(dds_results$padj),]
+  
+  print("for DB:")
+  print(paste("Processing contrast:", contrast))
+  print(paste("Interesting genes:", length(interesting_genes$gene_id)))
+  print(paste("Universe size:", length(dds_results_filtered$gene_id)))
+  
   enrichGO_results <- clusterProfiler::enrichGO(
-    gene = interesting_genes$gene_name,
+    gene = interesting_genes$gene_id,
     OrgDb = "org.Mm.eg.db",
     keyType = "ENSEMBL",
-    ont = "BP", # put all of them (ALL or a vector )
-    universe = dds_results$gene_name, #filter out the genes that don't have a adjust p-value before passing them to the universe 
+    ont = "ALL", 
+    universe = dds_results_filtered$gene_id, 
     maxGSSize = 500 # this is the default value 
   )
   
@@ -413,8 +623,8 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
   
   print("DB: printed dotplot")
   
-  if(nrow(enrichGO_results) == 0) {
-    # if there is not enriched gene than we don't plot the results for the heatplot 
+  # if there is not enriched gene than we don't plot the results for the heatplot 
+  if(nrow(enrichGO_results) != 0) {
     # extract the foldChange of the interesting genes 
     foldChange<- interesting_genes$log2FoldChange
     names(foldChange) <- rownames(interesting_genes)
@@ -436,33 +646,71 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
   )
 }
 
-output_path <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/overrepresentation_analysis"
+dir_step7_LFC_1_padj_005 <- paste0(dir_step7, "/LFC_1_padj_0-05")
+dir_step7_LFC_1_padj_001 <- paste0(dir_step7, "/LFC_1_padj_0-01")
+
 
 # identification of the biological function of the possibile interesting genes 
+# analysis upregulated and downregulated genes at the same time 
 
 # --- in the contrast DKO infected vs WT infected
-enrichGO_DKO_Case_vs_WT_Case <- enrichGO_plotting(int_genes_DKO_Case_vs_WT_Case, 
-                                                  res_DKO_Case_vs_WT_Case, 
-                                                  "DKO infected vs WT infected", 
-                                                  output_path)
+enrichGO_DKO_Case_vs_WT_Case <- enrichGO_plotting(int_genes_DKO_Case_vs_WT_Case_up_down_regulated, 
+                                                  res_DKO_Case_vs_WT_Case_up_down_regulated, 
+                                                  "DKO infected vs WT infected up and down regulated", 
+                                                  dir_step7_LFC_1_padj_001)
+enrichGO_DKO_Case_vs_WT_Case <- enrichGO_plotting(int_genes_DKO_Case_vs_WT_Case_up_regulated, 
+                                                  res_DKO_Case_vs_WT_Case_up_regulated, 
+                                                  "DKO infected vs WT infected up regulated", 
+                                                  dir_step7_LFC_1_padj_001)
+enrichGO_DKO_Case_vs_WT_Case <- enrichGO_plotting(int_genes_DKO_Case_vs_WT_Case_down_regulated, 
+                                                  res_DKO_Case_vs_WT_Case_down_regulated, 
+                                                  "DKO infected vs WT infected down regulated", 
+                                                  dir_step7_LFC_1_padj_001)
 
 # --- in the contrast WT infected vs WT not infected
-enrichGO_WT_Case_vs_WT_Control <- enrichGO_plotting(int_genes_WT_Case_vs_WT_Control, 
-                                                  res_WT_Case_vs_WT_Control, 
-                                                  "WT infected vs WT not infected", 
-                                                  output_path)
+enrichGO_WT_Case_vs_WT_Control <- enrichGO_plotting(int_genes_WT_Case_vs_WT_Control_up_down_regulated, 
+                                                  res_WT_Case_vs_WT_Control_up_down_regulated, 
+                                                  "WT infected vs WT not infected up and down regulated", 
+                                                  dir_step7_LFC_1_padj_001)
+enrichGO_WT_Case_vs_WT_Control <- enrichGO_plotting(int_genes_WT_Case_vs_WT_Control_up_regulated, 
+                                                    res_WT_Case_vs_WT_Control_up_regulated, 
+                                                    "WT infected vs WT not infected up regulated", 
+                                                    dir_step7_LFC_1_padj_001)
+enrichGO_WT_Case_vs_WT_Control <- enrichGO_plotting(int_genes_WT_Case_vs_WT_Control_down_regulated, 
+                                                    res_WT_Case_vs_WT_Control_down_regulated, 
+                                                    "WT infected vs WT not infected down regulated", 
+                                                    dir_step7_LFC_1_padj_001)
 
 # --- in the contrast DKO infected vs DKO not infected
-enrichGO_DKO_Case_vs_DKO_Control <- enrichGO_plotting(int_genes_DKO_Case_vs_DKO_Control, 
-                                                      res_DKO_Case_vs_DKO_Control, 
-                                                    "DKO infected vs DKO not infected", 
-                                                    output_path)
+enrichGO_DKO_Case_vs_DKO_Control <- enrichGO_plotting(int_genes_DKO_Case_vs_DKO_Control_up_down_regulated, 
+                                                      res_DKO_Case_vs_DKO_Control_up_down_regulated, 
+                                                    "DKO infected vs DKO not infected up and down regulated", 
+                                                    dir_step7_LFC_1_padj_001)
+enrichGO_DKO_Case_vs_DKO_Control <- enrichGO_plotting(int_genes_DKO_Case_vs_DKO_Control_up_regulated, 
+                                                      res_DKO_Case_vs_DKO_Control_up_regulated, 
+                                                      "DKO infected vs DKO not infected up regulated", 
+                                                      dir_step7_LFC_1_padj_001)
+enrichGO_DKO_Case_vs_DKO_Control <- enrichGO_plotting(int_genes_DKO_Case_vs_DKO_Control_down_regulated, 
+                                                      res_DKO_Case_vs_DKO_Control_down_regulated, 
+                                                      "DKO infected vs DKO not infected down regulated", 
+                                                      dir_step7_LFC_1_padj_001)
 
 # --- in the contrast DKO not infected vs WT not infected
-enrichGO_DKO_Control_vs_WT_Control <- enrichGO_plotting(int_genes_DKO_Control_vs_WT_Control, 
-                                                        res_DKO_Control_vs_WT_Control, 
-                                                        "DKO not infected vs WT not infected", 
-                                                        output_path)
+enrichGO_DKO_Control_vs_WT_Control <- enrichGO_plotting(int_genes_DKO_Control_vs_WT_Control_up_down_regulated, 
+                                                        res_DKO_Control_vs_WT_Control_up_down_regulated, 
+                                                        "DKO not infected vs WT not infected up and down regulated", 
+                                                        dir_step7_LFC_1_padj_001)
+enrichGO_DKO_Control_vs_WT_Control <- enrichGO_plotting(int_genes_DKO_Control_vs_WT_Control_up_regulated, 
+                                                        res_DKO_Control_vs_WT_Control_up_regulated, 
+                                                        "DKO not infected vs WT not infected up regulated", 
+                                                        dir_step7_LFC_1_padj_001)
+enrichGO_DKO_Control_vs_WT_Control <- enrichGO_plotting(int_genes_DKO_Control_vs_WT_Control_down_regulated, 
+                                                        res_DKO_Control_vs_WT_Control_down_regulated, 
+                                                        "DKO not infected vs WT not infected down regulated", 
+                                                        dir_step7_LFC_1_padj_001)
+
+
+
 
 
 
