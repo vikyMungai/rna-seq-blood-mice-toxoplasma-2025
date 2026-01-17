@@ -79,6 +79,3 @@ apptainer exec --bind /data/ \
     apptainer exec --bind /data/ \
     $CONTAINER_HISAT_SAMTOOLS samtools sort -m 30G -@ $SLURM_CPUS_PER_TASK \
     -o "$SORTED_BAM_FILE" -T temp
-
-# try to use `samtools sort` and converting from sam to bam and sorting them in one command. Pass the sam file in the command `samtool sort` and ask the bam as output. 
-# Look up the command acutally 

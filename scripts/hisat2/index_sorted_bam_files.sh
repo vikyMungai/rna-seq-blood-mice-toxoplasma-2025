@@ -39,7 +39,4 @@ if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
 fi 
 
-# for debugging 
-# echo "DB: SORTED_BAM_FILE: $SORTED_BAM_FILE, INDEXED_S_BAM_FILE: $INDEXED_S_BAM_FILE, BASE_NAME: $BASE_NAME"
-
 apptainer exec --bind /data/ $CONTAINER_HISAT_SAMTOOLS samtools index "$SORTED_BAM_FILE" -o "$INDEXED_S_BAM_FILE"
