@@ -59,7 +59,8 @@ Starting from the fastq files of the samples the workflow is divided in 7 main s
 7. Overrepresentation analysis
 
 Usage notes: 
-- Change the path of the working directory `WORK_DIR` both in the `.sh` and in the `R` scripts 
+- Change the path of the working directory `WORK_DIR` in the `.sh`
+- In the `R` scripts change the variabile `r_scripts_dir` with the path where the script `des_eq_custom_functions.R`is downloaded and the variable `work_dir` with the directory where the results should be saved. 
 - In scripts where parameters are requested there is the documentation that explain what is needed. 
 Both in this README (in the [pipeline steps](#pipeline-steps)) and in the documentation inside the script there is the specific command with the argument for the specific cases. 
 - If a scripts access a file which needs to be generated, a explicit comment in the script will tell you. Nevertheless, in the step of the workflow it would be clearly state when and how to generate these files. 
@@ -67,6 +68,8 @@ Both in this README (in the [pipeline steps](#pipeline-steps)) and in the docume
 
 ## Pipeline steps 
 Below is given the workflow in detail and in which order the scripts has to be run, they are all in the directory `./scripts`. If not other information is given, to run the script use `sbatch [filename]`. 
+
+NB: The scripts that don't use sbatch must be run on an interactive node and not in the login node. 
 
 Before submitting a batch script create the logs folders.  
 ```
@@ -132,7 +135,7 @@ The fastq files for the Blood sample are stored in the directory `/data/courses/
 2. For each sample separately, map the reads to the reference genome using Hisat2. The correct strandedness setting for this library prep protocol is RF.
 3. Convert the resulting sam files to bam format using Samtools 
 4. Sort the bam files by genomic coordinates using Samtools
-    - `map_reads_summary_convert_sort_bam.sh` the steps 2, 3, and 4 are achieved with this script. The output will be only the sorted bam file. 
+    - `map_reads_summary_convert_sort_bam.sh` the steps 2, 3, and 4 are achieved within this script (for efficiency in storage). The output will be only the sorted bam file. 
 5. Index the coordinate sorted bam files using Samtools 
     - `shared/generate_sorted_bam_list.sh` to generate the list of the sorted bam files that will be used to use the slurm array in the script: `index_sorted_bam_files.sh`
         ```
