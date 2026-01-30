@@ -155,13 +155,10 @@ volcano_ggplot <- function(results_DESeq, plot_title, output_file, interesting_g
   
   
   # only plotting a subset of the interesting genes 
-  top_genes <- head(interesting_genes[order(interesting_genes$padj), "gene_id"], 40)
+  top_genes <- head(interesting_genes[order(interesting_genes$padj), "gene_id"], 30)
   # gene_symbols column rappresents the filtering for the labels in the plot 
   results_DESeq$gene_symbols <- ifelse( results_DESeq$gene_id %in% top_genes,
                                         results_DESeq$gene_id, "")
-  # TODO: for DB 
-  print("for DB")
-  print( results_DESeq$gene_symbols[which(results_DESeq$gene_symbols != "")])
   
   # obtain the gene symbols only for the genes I want to plot 
   symbols <- mapIds(org.Mm.eg.db, keys =  top_genes, column = "SYMBOL", keytype = "ENSEMBL", multiVals = "first")
@@ -175,7 +172,7 @@ volcano_ggplot <- function(results_DESeq, plot_title, output_file, interesting_g
     geom_vline(xintercept = c(-log2_fold_change, log2_fold_change), col = "gray", linetype = 'dashed') + 
     geom_hline(yintercept = -log10(padj_value), col = "gray", linetype = 'dashed') + 
     geom_point(size = 1) +
-    scale_color_manual(values = c("steelblue3", "grey", "plum"), 
+    scale_color_manual(values = c("steelblue3", "grey", "violetred3"), 
                        labels = c("Downregulated", "Not significant", "Upregulated")) + 
     coord_cartesian( xlim = c(-20, 15)) + 
     labs(color = 'Gene express level', x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
@@ -223,8 +220,9 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
     gene = interesting_genes$gene_id,
     OrgDb = "org.Mm.eg.db",
     keyType = "ENSEMBL",
-    ont = "ALL", 
-    universe = dds_results_filtered$gene_id, 
+    ont = "BP", # biological function  
+    universe = dds_results_filtered$gene_id,
+    pvalueCutoff = 0.05, 
     maxGSSize = 500 # this is the default value 
   )
   
@@ -232,14 +230,21 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
   print(class(enrichGO_results))
   
   file_name <- gsub(" ", "_", contrast)
-  pdf(paste0(output_path, "/", file_name, ".pdf"), width = 20, height = 10 )
+  pdf(paste0(output_path, "/", file_name, ".pdf"), width = 15, height = 10 )
   
   # plotting with bar plots the enrichment result 
   print(
     barplot(enrichGO_results, 
             showCategory=10, 
-            orderBy = "p.adjust",
-            title = paste0("Barplot for interesting genes in contrast ", contrast))
+            orderBy = "GeneRatio",
+            title = paste0("Barplot for interesting genes in contrast ", contrast)) + 
+      theme(
+              plot.title = element_text(size = 20),
+              axis.title = element_text(size = 16),
+              axis.text = element_text(size = 14),
+              legend.title = element_text(size = 14),
+              legend.text = element_text(size = 12)
+      )
   )
   
   
@@ -251,8 +256,15 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
                         showCategory=10, 
                         x = 'GeneRatio', 
                         color = 'p.adjust', 
-                        orderBy = 'p.adjust' ) +  
-      ggtitle(paste0("Dotplot for contrast ", contrast))
+                        orderBy = 'GeneRatio' ) +  
+      ggtitle(paste0("Dotplot for contrast ", contrast)) + 
+      theme(
+        plot.title = element_text(size = 20),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12)
+      )
   )
   
   print("DB: printed dotplot")
@@ -267,7 +279,14 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
       enrichplot::heatplot(enrichGO_results, 
                            showCategory=5, 
                            foldChange = foldChange ) + 
-        ggtitle(paste0("Heatplot for contrast ", contrast))
+        ggtitle(paste0("Heatplot for contrast ", contrast)) + 
+        theme(
+          plot.title = element_text(size = 20),
+          axis.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          legend.title = element_text(size = 14),
+          legend.text = element_text(size = 12)
+        )
     )
     print("DB: printed heatplot")
   }

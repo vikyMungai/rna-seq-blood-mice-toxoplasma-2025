@@ -6,6 +6,9 @@
 # BiocManager::install("org.Mm.eg.db")
 # BiocManager::install("clusterProfiler", force = TRUE)
 
+# Rscripts directory
+r_scripts_dir <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/Rscritps"
+setwd(r_scripts_dir)
 
 library(DESeq2)
 
@@ -22,17 +25,23 @@ library(clusterProfiler) # had a problem with the package 'enrichplot'
 
 # library to plot enrichment results 
 library(ggplot2)
+
+# custom library for function 
 source("des_eq_custom_functions.R")
 
+### DIRECTORIES VARIABLES  
+# working directory 
+work_dir <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project"
+
 ### input files 
-dir_input <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/feature_counts"
+dir_input <- paste0(work_dir,"/results/feature_counts") 
 ### directories to store plots
-dir_step5 <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/2_factors/5_exploratory_data_analysis"
-dir_step6 <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/2_factors/6_differential_analysis"
-dir_step7 <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/results/2_factors/7_overrepresentation_analysis"
+dir_step5 <- paste0(work_dir,"/results/2_factors/5_exploratory_data_analysis")
+dir_step6 <- paste0(work_dir,"/results/2_factors/6_differential_analysis")
+dir_step7 <- paste0(work_dir,"/results/2_factors/7_overrepresentation_analysis")
 # LFC and padj thresholds 
-LFC_limit = 1 
-padj_limit = 0.01
+LFC_limit <- 1 
+padj_limit <- 0.01
 
 #check if the dir_input exists 
 if (!dir.exists(dir_input)) {
@@ -342,6 +351,11 @@ plot_counts_single_gene(dds, "Gbp2", "ENSMUSG00000028270", "Gbp2")
 # plot counts of gene Tent5c (ENSMUSG00000044468)
 plot_counts_single_gene(dds, "Tent5c", "ENSMUSG00000044468", "Tent5c")
 
+# plot counts of gene Tmod1 (ENSMUSG00000028328)
+plot_counts_single_gene(dds, "Tmod1", "ENSMUSG00000028328", "Tmod1")
+
+# plot counts of gene Tent5c (ENSMUSG00000044468)
+plot_counts_single_gene(dds, "Psme3", "ENSMUSG00000078652", "Psme3")
 
 #
 #
@@ -417,54 +431,6 @@ enrichGO_interaction_down_regulated <- enrichGO_plotting(int_genes_interaction_d
                                                   res_interaction_down_regulated, 
                                                   "Interaction term down regulated", 
                                                   current_dir_step7)
-
-enrichGO_interaction_up_regulated@result[enrichGO_interaction_up_regulated@result$Description == "erythrocyte differentiation", ]
-enrichGO_interaction_up_regulated@result[enrichGO_interaction_up_regulated@result$Description == "erythrocyte differentiation", ]
-
-
-
-# TODO: arrivtata fino a qui 
-# TODO: 21/12/25 - 23:32 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##TODO !! THIS COMMENTS BELOW NEEDS TO GO IN THE FUTURE 
-
-# last step of step 6 
-# Based on the original publication, select 2-3 genes that are of particular interest and investigate their expression level. 
-#You could use, for example, the normalised counts (see DESeq2::counts) 
-#where the effect of between-sample differences in sequencing depth has been removed.
-# counts function to see the normalised counts 
-counts(dds)
-
-
-
-# to convert the name of the gene you can use the package that is in step 7 
-# there are different genes that can have the same symble, so we should work with them only in the end 
-# we have to translate them only when we want to visualise them 
-
-# package org.Mm.eg.
-
-##TODO !! THIS COMMENTS NEEDS TO GO IN THE FUTURE [END]
-
-
-
 
 
 
