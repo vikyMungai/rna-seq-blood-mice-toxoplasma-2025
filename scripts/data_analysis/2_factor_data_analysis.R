@@ -35,6 +35,7 @@ work_dir <- "/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project"
 
 ### input files 
 dir_input <- paste0(work_dir,"/results/feature_counts") 
+condition_file_dir <- paste0(work_dir,"/data/raw_data") 
 ### directories to store plots
 dir_step5 <- paste0(work_dir,"/results/2_factors/5_exploratory_data_analysis")
 dir_step6 <- paste0(work_dir,"/results/2_factors/6_differential_analysis")
@@ -73,7 +74,7 @@ new_col_names <- sub(".*(SRR[0-9]+).*", "\\1", colnames(counts_data))
 colnames(counts_data) <- new_col_names
 
 # read the sample information table 
-setwd("/Users/vittoriamungai/Desktop/RNA_sequencing/RNA_project/data/raw_data")
+setwd(condition_file_dir)
 col_data <- read.csv("DESeq_colData_2_conditions.csv", 
                      header = TRUE, 
                      sep = ";")

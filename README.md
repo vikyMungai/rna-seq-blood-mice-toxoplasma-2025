@@ -60,7 +60,7 @@ Starting from the fastq files of the samples the workflow is divided in 7 main s
 
 Usage notes: 
 - Change the path of the working directory `WORK_DIR` in the `.sh`
-- In the `R` scripts change the variabile `r_scripts_dir` with the path where the script `des_eq_custom_functions.R`is downloaded and the variable `work_dir` with the directory where the results should be saved. 
+- In the `R` scripts change the variabile `r_scripts_dir` with the path where the script `des_eq_custom_functions.R`is downloaded and the variable `work_dir` with the directory where the results should be saved. Also update the variables `condition_file_dir` and `dir_input` with the directory where you downloaded the `DESeq_colData_2_conditions.csv` and `formatted_feature_count.txt` respectively 
 - In scripts where parameters are requested there is the documentation that explain what is needed. 
 Both in this README (in the [pipeline steps](#pipeline-steps)) and in the documentation inside the script there is the specific command with the argument for the specific cases. 
 - If a scripts access a file which needs to be generated, a explicit comment in the script will tell you. Nevertheless, in the step of the workflow it would be clearly state when and how to generate these files. 
@@ -160,8 +160,9 @@ To generate a final report of all the previous steps run:
 #### 5-7. Exploratory data analysis, Differential expression analysis and Overrepresentation analysis
 1. To remove the first line and the columns containing Chr, Start, End, Strand and Length
     - `feature_counts/format_feature_counts_file.sh` to reformat the table in `feature_count.txt` to correspond to the format expected by DESeq2.
-2. To run the differrential expression analysis and the overrepresentation analysis: 
-    - download locally the scripts `data_analysis/2_factor_data_analysis.R` and `data_analysis/des_eq_custom_functions.R`, they have to be in teh same directory because the first script is usign the function from the second one. 
+2. To run the differential expression analysis and the overrepresentation analysis: 
+    - download locally the scripts `data_analysis/2_factor_data_analysis.R` and `data_analysis/des_eq_custom_functions.R`, they have to be in the same directory because the first script is usign the function from the second one. 
+    - download the file `DESeq_colData_2_conditions.csv` and put in the same directory or a subfolder of the Rscript. 
     - execute the script `data_analysis/2_factor_data_analysis.R`
 
 

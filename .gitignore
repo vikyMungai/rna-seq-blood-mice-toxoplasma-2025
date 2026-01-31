@@ -1,9 +1,12 @@
 # exclude the logs 
 /logs
 # exclude the data files  
-/data
+/data/external_data
+/data/processed_data
 # exclude the output of the results 
 /results
 /old_results
 # my trails scripts 
 /scripts/old_scripts
+# report folder 
+/report
