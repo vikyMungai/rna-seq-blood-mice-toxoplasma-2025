@@ -135,7 +135,15 @@ ggplot(pcaData, aes(PC1, PC2, color=Disease, shape =Genotype )) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
   scale_y_continuous(breaks = scales::breaks_width(20)) +
-  coord_fixed()
+  coord_fixed() + 
+  theme(
+    plot.title = element_text(size = 20),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  ) +
+  ggtitle("Principal Component Analysis (PCA)")
 ggsave("plotPCA.pdf")
 
 # Count the knocked-out Ifnar and Ifngr genes to verify that the knockout was successful
@@ -347,9 +355,6 @@ plot_counts_single_gene(dds, "Gbp5", "ENSMUSG00000105504", "Gbp5")
 
 # plot counts of gene Gbp2 (ENSMUSG00000028270)
 plot_counts_single_gene(dds, "Gbp2", "ENSMUSG00000028270", "Gbp2")
-
-# plot counts of gene Tent5c (ENSMUSG00000044468)
-plot_counts_single_gene(dds, "Tent5c", "ENSMUSG00000044468", "Tent5c")
 
 # plot counts of gene Tmod1 (ENSMUSG00000028328)
 plot_counts_single_gene(dds, "Tmod1", "ENSMUSG00000028328", "Tmod1")

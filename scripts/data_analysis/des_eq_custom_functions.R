@@ -43,7 +43,14 @@ plot_counts_single_gene<- function(dds, gene_name, gene_id, file_tag){
     xlab("Genotype") + 
     ylab("Normalised counts") + 
     ggtitle(paste0(gene_name, " - ", gene_id, " counts")) + 
-    theme(plot.title = element_text(margin = margin(t = 10, b = 10)))
+    theme(plot.title = element_text(margin = margin(t = 10, b = 10))) + 
+    theme(
+      plot.title = element_text(size = 20),
+      axis.title = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 12)
+    )
   ggsave( paste0("Normalised_counts_", file_tag, ".pdf"))
 }
 
@@ -175,6 +182,13 @@ volcano_ggplot <- function(results_DESeq, plot_title, output_file, interesting_g
     scale_color_manual(values = c("steelblue3", "grey", "violetred3"), 
                        labels = c("Downregulated", "Not significant", "Upregulated")) + 
     coord_cartesian( xlim = c(-20, 15)) + 
+    theme(
+      plot.title = element_text(size = 20),
+      axis.title = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 12)
+    ) + 
     labs(color = 'Gene express level', x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
     ggtitle(plot_title) +
     # max overlaps was chosen Inf to not lose labels 
@@ -257,14 +271,14 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
                         x = 'GeneRatio', 
                         color = 'p.adjust', 
                         orderBy = 'GeneRatio' ) +  
-      ggtitle(paste0("Dotplot for contrast ", contrast)) + 
       theme(
         plot.title = element_text(size = 20),
         axis.title = element_text(size = 16),
         axis.text = element_text(size = 14),
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12)
-      )
+      ) + 
+      ggtitle(paste0("Dotplot for contrast ", contrast)) 
   )
   
   print("DB: printed dotplot")
@@ -279,14 +293,14 @@ enrichGO_plotting <- function(interesting_genes, dds_results, contrast, output_p
       enrichplot::heatplot(enrichGO_results, 
                            showCategory=5, 
                            foldChange = foldChange ) + 
-        ggtitle(paste0("Heatplot for contrast ", contrast)) + 
         theme(
           plot.title = element_text(size = 20),
           axis.title = element_text(size = 16),
           axis.text = element_text(size = 14),
           legend.title = element_text(size = 14),
           legend.text = element_text(size = 12)
-        )
+        ) + 
+        ggtitle(paste0("Heatplot for contrast ", contrast)) 
     )
     print("DB: printed heatplot")
   }
